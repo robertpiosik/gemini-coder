@@ -1,18 +1,20 @@
 {
   "compilerOptions": {
+    "target": "es2020",
+    "lib": ["dom", "es2020"],
     "module": "commonjs",
-    "target": "es6",
     "outDir": "out",
-    "lib": ["es6", "dom"],
     "sourceMap": true,
     "esModuleInterop": true,
     "baseUrl": ".",
     "strict": true,
+    "jsx": "react-jsx",
     "types": ["chrome", "webextension-polyfill"],
     "paths": {
       "@/*": ["./src/*"],
-      "@shared/*": ["../shared/src/*"]
+      "@shared/*": ["../shared/src/*"],
+      "@ui/*": ["../ui/src/*"]
     }
   },
-  "include": ["src/**/*.ts", "../shared/src/**/*.ts"]
+  "include": ["src/**/*", "../shared/src/**/*", "../ui/src/**/*"]
 }

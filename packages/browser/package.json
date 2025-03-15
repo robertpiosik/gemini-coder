@@ -4,10 +4,19 @@
     "build": "webpack --mode production && node create-firefox-build.js && node create-zip-archives.js"
   },
   "devDependencies": {
+    "@pmmmwh/react-refresh-webpack-plugin": "^0.5.15",
+    "@svgr/webpack": "^8.1.0",
     "archiver": "^6.0.1",
     "clean-webpack-plugin": "^4.0.0",
     "copy-webpack-plugin": "^12.0.2",
+    "css-loader": "^6.8.1",
+    "mini-css-extract-plugin": "^2.9.0",
+    "react-refresh": "^0.14.0",
+    "sass": "^1.83.1",
+    "sass-loader": "^13.3.3",
+    "style-loader": "^3.3.3",
     "ts-loader": "^9.5.1",
+    "turndown": "^7.2.0",
     "typescript": "^5.5.4",
     "webextension-polyfill": "^0.12.0",
     "webpack": "^5.93.0",
@@ -15,10 +24,21 @@
     "webpack-dev-server": "^5.0.4"
   },
   "dependencies": {
+    "@joplin/turndown": "^4.0.74",
+    "@joplin/turndown-plugin-gfm": "^1.0.56",
+    "@mozilla/readability": "^0.5.0",
     "@types/chrome": "^0.0.270",
+    "@types/dompurify": "^3.0.5",
+    "@types/react": "^18.2.48",
+    "@types/react-dom": "^18.2.18",
+    "@types/turndown": "^5.0.5",
     "@types/webextension-polyfill": "^0.12.1",
     "@vscode/codicons": "^0.0.36",
     "classnames": "^2.5.1",
+    "dompurify": "^3.0.10",
+    "localforage": "^1.10.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "tsconfig-paths-webpack-plugin": "^4.2.0"
   }
 }

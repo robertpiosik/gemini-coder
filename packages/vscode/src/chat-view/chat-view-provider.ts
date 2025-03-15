@@ -8,6 +8,9 @@ import {
   ExtensionMessage,
   PresetsMessage
 } from './types/messages'
+import { WebsitesProvider } from '../context/websites-provider'
+import { OpenEditorsProvider } from '@/context/open-editors-provider'
+import { WorkspaceProvider } from '@/context/workspace-provider'
 
 export class ChatViewProvider implements vscode.WebviewViewProvider {
   private _webview_view: vscode.WebviewView | undefined
@@ -16,8 +19,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
   constructor(
     private readonly _extension_uri: vscode.Uri,
-    private readonly file_tree_provider: any,
-    private readonly open_editors_provider: any,
+    private readonly _workspace_provider: WorkspaceProvider,
+    private readonly _open_editors_provider: OpenEditorsProvider,
+    private readonly _websites_provider: WebsitesProvider,
     private readonly _context: vscode.ExtensionContext,
     private readonly websocket_server_instance: WebSocketManager
   ) {
@@ -178,8 +182,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
             case 'SEND_PROMPT': {
               const files_collector = new FilesCollector(
-                this.file_tree_provider,
-                this.open_editors_provider
+                this._workspace_provider,
+                this._open_editors_provider,
+                this._websites_provider
               )
 
               const active_editor = vscode.window.activeTextEditor
@@ -244,8 +249,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
 
             case 'COPY_PROMPT': {
               const files_collector = new FilesCollector(
-                this.file_tree_provider,
-                this.open_editors_provider
+                this._workspace_provider,
+                this._open_editors_provider,
+                this._websites_provider
               )
 
               const is_fim_mode = this._context.workspaceState.get<boolean>(
@@ -281,7 +287,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider {
                   ''
                 )
 
-                const text = `<files>\n${context_text}<file path="${relative_path}"><![CDATA[${text_before_cursor}<fill missing code>${text_after_cursor}]]>\n</file>\n</files>\n123${autocomplete_instruction_external}${
+                const text = `<files>\n${context_text}<file path="${relative_path}"><![CDATA[${text_before_cursor}<fill missing code>${text_after_cursor}]]>\n</file>\n</files>\n${autocomplete_instruction_external}${
                   message.instruction
                     ? ` Follow suggestions: ${message.instruction}`
                     : ''

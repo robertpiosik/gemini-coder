@@ -3,9 +3,13 @@ import * as vscode from 'vscode'
 import * as child_process from 'child_process'
 import * as path from 'path'
 import * as net from 'net'
-import { InitializeChatsMessage } from '@shared/types/websocket-message'
+import {
+  InitializeChatsMessage,
+  UpdateSavedWebsitesMessage
+} from '@shared/types/websocket-message'
 import { CHATBOTS } from '@shared/constants/chatbots'
 import { DEFAULT_PORT, SECURITY_TOKENS } from '@shared/constants/websocket'
+import { WebsitesProvider } from '../context/websites-provider'
 
 export class WebSocketManager {
   private context: vscode.ExtensionContext
@@ -16,18 +20,27 @@ export class WebSocketManager {
     new vscode.EventEmitter<boolean>()
   private reconnect_timer: NodeJS.Timeout | null = null
   private has_connected_browsers: boolean = false
+  private websites_provider: WebsitesProvider | null = null
 
   public readonly on_connection_status_change: vscode.Event<boolean> =
     this._on_connection_status_change.event
 
-  constructor(context: vscode.ExtensionContext) {
+  constructor(
+    context: vscode.ExtensionContext,
+    websites_provider?: WebsitesProvider
+  ) {
     this.context = context
+    this.websites_provider = websites_provider || null
     this.initialize_server()
 
     // Add subscription for cleanup
     context.subscriptions.push({
       dispose: () => this.dispose()
     })
+  }
+
+  set_websites_provider(provider: WebsitesProvider): void {
+    this.websites_provider = provider
   }
 
   private async is_port_in_use(port: number): Promise<boolean> {
@@ -118,9 +131,14 @@ export class WebSocketManager {
     this.client.on('message', (data) => {
       try {
         const message = JSON.parse(data.toString())
+        console.log('Incoming WS message:', message)
         if (message.action == 'browser-connection-status') {
           this.has_connected_browsers = message.has_connected_browsers
           this._on_connection_status_change.fire(this.has_connected_browsers)
+        } else if (message.action == 'update-saved-websites') {
+          this.websites_provider?.update_websites(
+            (message as UpdateSavedWebsitesMessage).websites
+          )
         }
       } catch (error) {
         console.error('Error processing message:', error)

@@ -15,6 +15,9 @@ const vscode_clients = new Set()
 let current_browser_client = null
 const connections = new Set()
 
+// Storage for saved websites
+let saved_websites = []
+
 // Create HTTP server
 const server = http.createServer((req, res) => {
   if (req.url == '/health') {
@@ -47,6 +50,18 @@ function notify_vscode_clients() {
       client.send(message)
     }
   })
+}
+
+// Send saved websites to a client
+function send_saved_websites_to_client(client) {
+  if (saved_websites.length > 0 && client.readyState == WebSocket.OPEN) {
+    client.send(
+      JSON.stringify({
+        action: 'update-saved-websites',
+        websites: saved_websites
+      })
+    )
+  }
 }
 
 // Send ping to browser client
@@ -109,6 +124,9 @@ wss.on('connection', (ws, request) => {
         has_connected_browsers: current_browser_client !== null
       })
     )
+    
+    // Send saved websites to new VS Code client
+    send_saved_websites_to_client(ws)
   }
 
   connections.add(ws)
@@ -126,10 +144,22 @@ wss.on('connection', (ws, request) => {
 
       const msg_data = JSON.parse(msg_string)
 
-      // Broadcast message to all other clients if it's an initialize-chats action
+      // Handle different message types
       if (msg_data.action == 'initialize-chats') {
         connections.forEach((client) => {
           if (client !== ws && client.readyState == WebSocket.OPEN) {
+            client.send(msg_string)
+          }
+        })
+      }
+      else if (msg_data.action == 'update-saved-websites') {
+        // Store the updated websites
+        saved_websites = msg_data.websites
+        console.log(`Received ${saved_websites.length} saved websites`)
+        
+        // Forward to VS Code clients
+        vscode_clients.forEach((client) => {
+          if (client.readyState == WebSocket.OPEN) {
             client.send(msg_string)
           }
         })
@@ -199,6 +229,7 @@ function shutdown() {
   connections.clear()
   vscode_clients.clear()
   current_browser_client = null
+  saved_websites = []
 
   // Close server
   wss.close()

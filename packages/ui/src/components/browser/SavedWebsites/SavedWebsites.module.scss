@@ -1,0 +1,88 @@
+// @type
+
+.container {
+  width: 100%;
+}
+
+.item {
+  padding: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #dddddd;
+  gap: 8px;
+
+  &__left {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    gap: 8px;
+
+    &__favicon {
+      display: flex;
+      width: 16px;
+      > img {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    &__title {
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: black;
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+
+    &__button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      width: 20px;
+      height: 20px;
+      padding: 0;
+      line-height: 1;
+
+      &--remove {
+        font-size: 18px;
+        position: relative;
+
+        &::before,
+        &::after {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          width: 12px;
+          height: 1.5px;
+          background-color: #888;
+          transform: translate(-50%, -50%) rotate(45deg);
+        }
+
+        &::after {
+          transform: translate(-50%, -50%) rotate(-45deg);
+        }
+
+        &:hover {
+          &::before,
+          &::after {
+            background-color: red;
+          }
+        }
+      }
+    }
+  }
+}

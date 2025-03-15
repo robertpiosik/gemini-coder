@@ -3,18 +3,22 @@ import * as path from 'path'
 import * as vscode from 'vscode'
 import { WorkspaceProvider } from '../context/workspace-provider'
 import { OpenEditorsProvider } from '../context/open-editors-provider'
+import { WebsitesProvider } from '../context/websites-provider'
 
 export class FilesCollector {
   private file_tree_provider: WorkspaceProvider
   private open_editors_provider?: OpenEditorsProvider
+  private websites_provider?: WebsitesProvider
   private workspace_root: string
 
   constructor(
     file_tree_provider: WorkspaceProvider,
-    open_editors_provider?: OpenEditorsProvider
+    open_editors_provider?: OpenEditorsProvider,
+    websites_provider?: WebsitesProvider
   ) {
     this.file_tree_provider = file_tree_provider
     this.open_editors_provider = open_editors_provider
+    this.websites_provider = websites_provider
     // Get workspace root from VS Code API
     const workspace_folders = vscode.workspace.workspaceFolders
     this.workspace_root = workspace_folders
@@ -60,15 +64,24 @@ export class FilesCollector {
           const is_active = params?.active_path == file_path
           collected_text += `<file path="${relative_path}"${
             is_active ? ' active' : ''
-          }>
-<![CDATA[
-${content}
-]]>
-</file>
-`
+          }>\n<![CDATA[\n${content}\n]]>\n</file>\n`
         }
       } catch (error) {
         console.error(`Error reading file ${file_path}:`, error)
+      }
+    }
+
+    // Add content from checked websites
+    if (this.websites_provider) {
+      const checked_websites = this.websites_provider.get_checked_websites()
+
+      for (const website of checked_websites) {
+        if (params?.disable_xml) {
+          // Just add the content without XML wrapping for token counting
+          collected_text += website.content
+        } else {
+          collected_text += `<text title="${website.title}">\n<![CDATA[\n${website.content}\n]]>\n</text>\n`
+        }
       }
     }
 

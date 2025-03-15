@@ -365,7 +365,7 @@ export class WorkspaceProvider
     element.checkboxState = checkboxState
 
     // Get token count and add it to description
-    const token_count = element.tokenCount
+    const token_count = element.token_count
 
     if (token_count !== undefined) {
       // Format token count for display (e.g., 1.2k for 1,200)
@@ -931,7 +931,7 @@ export class FileItem extends vscode.TreeItem {
     public isGitIgnored: boolean,
     public isSymbolicLink: boolean = false,
     public isOpenFile: boolean = false,
-    public tokenCount?: number,
+    public token_count?: number,
     description?: string
   ) {
     super(label, collapsibleState)

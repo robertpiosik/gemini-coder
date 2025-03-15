@@ -25,11 +25,14 @@ export const Multiple = () => {
   return (
     <Presets
       presets={presets}
-      on_preset_click={() => {}}
+      on_preset_click={(name) => console.log('on_preset_click', name)}
       disabled={false}
       selected_presets={[]}
-      on_selected_presets_change={() => {}}
-      on_edit_presets={() => {}}
+      on_selected_presets_change={(names) => console.log('on_selected_presets_change', names)}
+      on_edit_presets={() => console.log('on_edit_presets')}
+      expanded_presets={[]}
+      on_expanded_presets_change={(indices) => console.log('on_expanded_presets_change', indices)}
+      is_fim_mode={false}
     />
   )
 }
@@ -38,11 +41,14 @@ export const Empty = () => {
   return (
     <Presets
       presets={[]}
-      on_preset_click={() => {}}
+      on_preset_click={(name) => console.log('on_preset_click', name)}
       disabled={false}
       selected_presets={[]}
-      on_selected_presets_change={() => {}}
-      on_edit_presets={() => {}}
+      on_selected_presets_change={(names) => console.log('on_selected_presets_change', names)}
+      on_edit_presets={() => console.log('on_edit_presets')}
+      expanded_presets={[]}
+      on_expanded_presets_change={(indices) => console.log('on_expanded_presets_change', indices)}
+      is_fim_mode={false}
     />
   )
 }

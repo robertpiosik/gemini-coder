@@ -3,6 +3,8 @@ import {
   InitializeChatsMessage
 } from '@shared/types/websocket-message'
 import browser from 'webextension-polyfill'
+import { send_saved_websites } from './websocket'
+import { is_message } from '@/utils/is-message'
 
 /**
  * Handle different types of incoming WebSocket messages
@@ -31,4 +33,19 @@ async function handle_initialize_chats_message(
       })
     }
   }
+}
+
+/**
+ * Set up message listeners for extension
+ */
+export function setup_message_listeners() {
+  browser.runtime.onMessage.addListener((message, _, sendResponse): any => {
+    if (
+      is_message(message) &&
+      message.action == 'update-saved-websites' &&
+      message.websites
+    ) {
+      send_saved_websites(message.websites)
+    }
+  })
 }

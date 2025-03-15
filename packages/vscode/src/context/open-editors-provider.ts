@@ -283,7 +283,7 @@ export class OpenEditorsProvider
     element.checkboxState = checkbox_state
 
     // Get token count and add it to description
-    const token_count = element.tokenCount
+    const token_count = element.token_count
 
     if (token_count !== undefined) {
       // Format token count for display (e.g., 1.2k for 1,200)

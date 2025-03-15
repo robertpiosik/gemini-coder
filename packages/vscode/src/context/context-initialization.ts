@@ -3,72 +3,64 @@ import { WorkspaceProvider } from './workspace-provider'
 import { FileItem } from './workspace-provider'
 import { FilesCollector } from '../helpers/files-collector'
 import { OpenEditorsProvider } from './open-editors-provider'
+import { WebsitesProvider, WebsiteItem } from './websites-provider'
 import { ignored_extensions } from './ignored-extensions'
 import { SharedFileState } from './shared-file-state'
+import { marked } from 'marked'
 
 export function context_initialization(context: vscode.ExtensionContext): {
-  file_tree_provider: WorkspaceProvider | undefined
+  workspace_provider: WorkspaceProvider | undefined
   open_editors_provider: OpenEditorsProvider | undefined
+  websites_provider: WebsitesProvider | undefined
 } {
   const workspace_folders = vscode.workspace.workspaceFolders
 
-  let file_tree_provider: WorkspaceProvider | undefined
+  let workspace_provider: WorkspaceProvider | undefined
   let open_editors_provider: OpenEditorsProvider | undefined
+  let websites_provider: WebsitesProvider | undefined
   let gemini_coder_file_tree_view: vscode.TreeView<FileItem>
   let gemini_coder_open_editors_view: vscode.TreeView<FileItem>
+  let gemini_coder_websites_view: vscode.TreeView<WebsiteItem>
+
+  // Add websites provider to disposables
 
   if (workspace_folders) {
     const workspace_root = workspace_folders[0].uri.fsPath
     const workspace_name = workspace_folders[0].name
-    file_tree_provider = new WorkspaceProvider(workspace_root)
+    workspace_provider = new WorkspaceProvider(workspace_root)
     open_editors_provider = new OpenEditorsProvider(
       workspace_root,
       ignored_extensions
     )
+    websites_provider = new WebsitesProvider()
 
-    // Initialize shared state
-    const sharedState = SharedFileState.getInstance()
-    sharedState.setProviders(file_tree_provider, open_editors_provider)
-
-    // Add shared state to disposables
-    context.subscriptions.push({
-      dispose: () => sharedState.dispose()
-    })
-
-    // Create two separate tree views
-    gemini_coder_file_tree_view = vscode.window.createTreeView(
-      'geminiCoderViewWorkspace',
+    // Create websites tree view
+    gemini_coder_websites_view = vscode.window.createTreeView(
+      'geminiCoderViewWebsites',
       {
-        treeDataProvider: file_tree_provider,
+        treeDataProvider: websites_provider,
         manageCheckboxStateManually: true
       }
     )
-    gemini_coder_file_tree_view.title = workspace_name
+    context.subscriptions.push(websites_provider, gemini_coder_websites_view)
 
-    gemini_coder_open_editors_view = vscode.window.createTreeView(
-      'geminiCoderViewOpenEditors',
-      {
-        treeDataProvider: open_editors_provider,
-        manageCheckboxStateManually: true
-      }
-    )
-
-    // Create FilesCollector instance that can collect from both providers
+    // Create FilesCollector instance that can collect from both providers and websites provider
     const files_collector = new FilesCollector(
-      file_tree_provider,
-      open_editors_provider
+      workspace_provider,
+      open_editors_provider,
+      websites_provider
     )
 
     const update_activity_bar_badge_token_count = async () => {
       let context_text = ''
 
       try {
-        // Use FilesCollector to get all files
+        // Use FilesCollector to get all files and websites
         context_text = await files_collector.collect_files({
           disable_xml: true
         })
       } catch (error) {
-        console.error('Error collecting files:', error)
+        console.error('Error collecting files and websites:', error)
         return
       }
 
@@ -82,9 +74,45 @@ export function context_initialization(context: vscode.ExtensionContext): {
       }
     }
 
+    // Handle checkbox state changes for websites
+    gemini_coder_websites_view.onDidChangeCheckboxState(async (e) => {
+      for (const [item, state] of e.items) {
+        await websites_provider!.update_check_state(item as WebsiteItem, state)
+      }
+      // Update token count when website checkboxes change
+      await update_activity_bar_badge_token_count()
+    })
+
+    // Initialize shared state
+    const sharedState = SharedFileState.getInstance()
+    sharedState.setProviders(workspace_provider, open_editors_provider)
+
+    // Add shared state to disposables
+    context.subscriptions.push({
+      dispose: () => sharedState.dispose()
+    })
+
+    // Create two separate tree views
+    gemini_coder_file_tree_view = vscode.window.createTreeView(
+      'geminiCoderViewWorkspace',
+      {
+        treeDataProvider: workspace_provider,
+        manageCheckboxStateManually: true
+      }
+    )
+    gemini_coder_file_tree_view.title = workspace_name
+
+    gemini_coder_open_editors_view = vscode.window.createTreeView(
+      'geminiCoderViewOpenEditors',
+      {
+        treeDataProvider: open_editors_provider,
+        manageCheckboxStateManually: true
+      }
+    )
+
     // Add providers and treeViews to ensure proper disposal
     context.subscriptions.push(
-      file_tree_provider,
+      workspace_provider,
       open_editors_provider,
       gemini_coder_file_tree_view,
       gemini_coder_open_editors_view
@@ -98,15 +126,17 @@ export function context_initialization(context: vscode.ExtensionContext): {
         try {
           context_text = await files_collector.collect_files()
         } catch (error: any) {
-          console.error('Error collecting files:', error)
+          console.error('Error collecting files and websites:', error)
           vscode.window.showErrorMessage(
-            'Error collecting files: ' + error.message
+            'Error collecting files and websites: ' + error.message
           )
           return
         }
 
         if (context_text == '') {
-          vscode.window.showWarningMessage('No files selected or open.')
+          vscode.window.showWarningMessage(
+            'No files or websites selected or open.'
+          )
           return
         }
 
@@ -122,11 +152,11 @@ export function context_initialization(context: vscode.ExtensionContext): {
       ),
       // Existing workspace commands
       vscode.commands.registerCommand('geminiCoder.clearChecks', () => {
-        file_tree_provider!.clearChecks()
+        workspace_provider!.clearChecks()
         update_activity_bar_badge_token_count()
       }),
       vscode.commands.registerCommand('geminiCoder.checkAll', async () => {
-        await file_tree_provider!.check_all()
+        await workspace_provider!.check_all()
         update_activity_bar_badge_token_count()
       }),
       // New open editors commands
@@ -143,13 +173,52 @@ export function context_initialization(context: vscode.ExtensionContext): {
           await open_editors_provider!.check_all()
           update_activity_bar_badge_token_count()
         }
+      ),
+      vscode.commands.registerCommand(
+        'geminiCoder.previewWebsite',
+        async (website: WebsiteItem) => {
+          const panel = vscode.window.createWebviewPanel(
+            'websitePreview',
+            website.title,
+            vscode.ViewColumn.One,
+            { enableScripts: false }
+          )
+
+          const rendered_content = marked.parse(website.content)
+
+          // Create a simple HTML preview
+          panel.webview.html = `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+              <meta charset="UTF-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>${website.title}</title>
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; line-height: 1.4; max-width: 700px; margin: 0 auto; padding: 40px; color: var(--vscode-editor-foreground); }
+                body > *:first-child { margin-top: 0; }
+                body > *:last-child { margin-bottom: 0; }
+                h1 { color: var(--vscode-editor-foreground); }
+                a { color: var(--vscode-textLink-foreground); }
+                hr { height: 1px; border: none; background-color: var(--vscode-editor-foreground); }
+              </style>
+            </head>
+            <body>
+              <h1>${website.title}</h1>
+              <p>🔗 <a href="${website.url}" target="_blank">${website.url}</a></p>
+              <hr>
+              <div>${rendered_content}</div>
+            </body>
+            </html>
+          `
+        }
       )
     )
 
     // Handle checkbox state changes asynchronously for file tree
     gemini_coder_file_tree_view.onDidChangeCheckboxState(async (e) => {
       for (const [item, state] of e.items) {
-        await file_tree_provider!.updateCheckState(item, state)
+        await workspace_provider!.updateCheckState(item, state)
       }
 
       // Update token count after checkbox changes
@@ -168,10 +237,18 @@ export function context_initialization(context: vscode.ExtensionContext): {
 
     // Subscribe to the onDidChangeCheckedFiles events from both providers
     context.subscriptions.push(
-      file_tree_provider.onDidChangeCheckedFiles(() => {
+      workspace_provider.onDidChangeCheckedFiles(() => {
         update_activity_bar_badge_token_count()
       }),
       open_editors_provider.onDidChangeCheckedFiles(() => {
+        update_activity_bar_badge_token_count()
+      }),
+      // Also subscribe to websites provider changes
+      websites_provider.onDidChangeCheckedWebsites(() => {
+        update_activity_bar_badge_token_count()
+      }),
+      // Fixes badge not updating when websites list changes
+      websites_provider.onDidChangeTreeData(() => {
         update_activity_bar_badge_token_count()
       })
     )
@@ -226,7 +303,7 @@ export function context_initialization(context: vscode.ExtensionContext): {
 
     // Fix for issue when the collapsed item has some of its children selected
     gemini_coder_file_tree_view.onDidCollapseElement(() => {
-      file_tree_provider!.refresh()
+      workspace_provider!.refresh()
     })
 
     // Set up event listener for when the open editors provider initializes
@@ -250,7 +327,8 @@ export function context_initialization(context: vscode.ExtensionContext): {
   }
 
   return {
-    file_tree_provider: file_tree_provider,
-    open_editors_provider: open_editors_provider
+    workspace_provider: workspace_provider,
+    open_editors_provider: open_editors_provider,
+    websites_provider: websites_provider
   }
 }

@@ -49,6 +49,10 @@
           "name": "Workspace"
         },
         {
+          "id": "geminiCoderViewWebsites",
+          "name": "Websites"
+        },
+        {
           "id": "geminiCoderViewChat",
           "name": "Chat",
           "type": "webview"
@@ -174,6 +178,10 @@
         "command": "geminiCoder.createFolder",
         "title": "Create Folder",
         "icon": "$(new-folder)"
+      },
+      {
+        "command": "geminiCoder.previewWebsite",
+        "title": "Preview Website Content"
       }
     ],
     "menus": {
@@ -500,6 +508,7 @@
     "axios": "^1.7.7",
     "classnames": "^2.5.1",
     "ignore": "^6.0.2",
+    "marked": "^15.0.7",
     "path-browserify": "^1.0.1",
     "react": "^18.2.0",
     "react-autosize-textarea": "^7.1.0",

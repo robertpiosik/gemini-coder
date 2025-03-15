@@ -31,8 +31,13 @@ let websocket_server_instance: WebSocketManager | null = null
 export function activate(context: vscode.ExtensionContext) {
   websocket_server_instance = new WebSocketManager(context)
 
-  const { file_tree_provider, open_editors_provider } =
+  const { workspace_provider, open_editors_provider, websites_provider } =
     context_initialization(context)
+
+  // Connect WebSocketManager with WebsitesProvider
+  if (websocket_server_instance && websites_provider) {
+    websocket_server_instance.set_websites_provider(websites_provider)
+  }
 
   // Status bar
   create_refactor_status_bar_item(context)
@@ -40,19 +45,22 @@ export function activate(context: vscode.ExtensionContext) {
   create_fim_status_bar_item(context)
 
   // Chat View
-  const chat_view_provider = new ChatViewProvider(
-    context.extensionUri,
-    file_tree_provider,
-    open_editors_provider,
-    context,
-    websocket_server_instance
-  )
-  context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(
-      'geminiCoderViewChat',
-      chat_view_provider
+  if (workspace_provider && open_editors_provider && websites_provider) {
+    const chat_view_provider = new ChatViewProvider(
+      context.extensionUri,
+      workspace_provider,
+      open_editors_provider,
+      websites_provider,
+      context,
+      websocket_server_instance
     )
-  )
+    context.subscriptions.push(
+      vscode.window.registerWebviewViewProvider(
+        'geminiCoderViewChat',
+        chat_view_provider
+      )
+    )
+  }
 
   // API View
   const api_view_provider = new ApiViewProvider(context.extensionUri, context)
@@ -71,74 +79,74 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     apply_changes_command({
       command: 'geminiCoder.applyChanges',
-      file_tree_provider: file_tree_provider,
+      file_tree_provider: workspace_provider,
       open_editors_provider: open_editors_provider,
       context,
       use_default_model: true
     }),
     apply_changes_command({
       command: 'geminiCoder.applyChangesWith',
-      file_tree_provider: file_tree_provider,
+      file_tree_provider: workspace_provider,
       open_editors_provider: open_editors_provider,
       context
     }),
     refactor_command({
       command: 'geminiCoder.refactor',
       context,
-      file_tree_provider: file_tree_provider,
+      file_tree_provider: workspace_provider,
       open_editors_provider: open_editors_provider,
       use_default_model: true
     }),
     refactor_command({
       command: 'geminiCoder.refactorWith',
       context,
-      file_tree_provider: file_tree_provider,
+      file_tree_provider: workspace_provider,
       open_editors_provider: open_editors_provider
     }),
     refactor_to_clipboard_command(
       context,
-      file_tree_provider,
+      workspace_provider,
       open_editors_provider
     ),
     fim_completion_command({
       command: 'geminiCoder.fimCompletionWith',
-      file_tree_provider: file_tree_provider,
+      file_tree_provider: workspace_provider,
       open_editors_provider: open_editors_provider,
       context
     }),
     fim_completion_command({
       command: 'geminiCoder.fimCompletion',
-      file_tree_provider: file_tree_provider,
+      file_tree_provider: workspace_provider,
       open_editors_provider: open_editors_provider,
       context,
       use_default_model: true
     }),
     fim_completion_to_clipboard_command(
-      file_tree_provider,
+      workspace_provider,
       open_editors_provider
     ),
     change_default_model_command('fim', context),
     change_default_model_command('refactoring', context),
     change_default_model_command('apply_changes', context),
     apply_changes_to_clipboard_command(
-      file_tree_provider,
+      workspace_provider,
       open_editors_provider
     ),
     web_chat_command(
       context,
-      file_tree_provider,
+      workspace_provider,
       open_editors_provider,
       websocket_server_instance
     ),
     web_chat_with_command(
       context,
-      file_tree_provider,
+      workspace_provider,
       open_editors_provider,
       websocket_server_instance
     ),
     chat_to_clipboard_command(
       context,
-      file_tree_provider,
+      workspace_provider,
       open_editors_provider
     ),
     close_editor_command(),

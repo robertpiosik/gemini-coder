@@ -14,6 +14,7 @@ export const Empty = () => (
     is_connected={true}
     is_fim_mode={false}
     on_fim_mode_click={() => console.log('FIM Mode Clicked')}
+    has_active_editor={false}
   />
 )
 
@@ -27,6 +28,7 @@ export const WithText = () => (
     is_connected={true}
     is_fim_mode={false}
     on_fim_mode_click={() => console.log('FIM Mode Clicked')}
+    has_active_editor={false}
   />
 )
 
@@ -41,6 +43,7 @@ export const DisabledSubmit = () => (
     submit_disabled_title="Cannot submit at this time"
     is_fim_mode={false}
     on_fim_mode_click={() => console.log('FIM Mode Clicked')}
+    has_active_editor={false}
   />
 )
 
@@ -54,6 +57,7 @@ export const MultilineText = () => (
     is_connected={true}
     is_fim_mode={false}
     on_fim_mode_click={() => console.log('FIM Mode Clicked')}
+    has_active_editor={false}
   />
 )
 
@@ -67,5 +71,6 @@ export const LongText = () => (
     is_connected={true}
     is_fim_mode={false}
     on_fim_mode_click={() => console.log('FIM Mode Clicked')}
+    has_active_editor={false}
   />
 )
