@@ -40,7 +40,7 @@ async function process_stream_chunk(
       if (trimmed_line.startsWith(DATA_PREFIX)) {
         try {
           const json_string = trimmed_line.slice(DATA_PREFIX.length).trim()
-          if (!json_string) continue
+          if (!json_string || json_string === DONE_TOKEN) continue
 
           const json_data = JSON.parse(json_string)
           if (json_data.choices?.[0]?.delta?.content) {
@@ -126,11 +126,12 @@ export async function make_api_request(
           try {
             const trimmed_line = buffer.trim()
             if (trimmed_line.startsWith(DATA_PREFIX)) {
-              const json_data = JSON.parse(
-                trimmed_line.slice(DATA_PREFIX.length)
-              )
-              if (json_data.choices?.[0]?.delta?.content) {
-                accumulated_content += json_data.choices[0].delta.content
+              const json_string = trimmed_line.slice(DATA_PREFIX.length).trim()
+              if (json_string && json_string !== DONE_TOKEN) {
+                const json_data = JSON.parse(json_string)
+                if (json_data.choices?.[0]?.delta?.content) {
+                  accumulated_content += json_data.choices[0].delta.content
+                }
               }
             }
           } catch (error) {

@@ -293,6 +293,12 @@
         "command": "geminiCoder.revert",
         "title": "Revert Last Applied Changes",
         "category": "Gemini Coder"
+      },
+      {
+        "command": "geminiCoder.generateCommitMessage",
+        "title": "Generate Commit Message with Gemini Coder",
+        "category": "Gemini Coder",
+        "icon": "$(sparkle)"
       }
     ],
     "menus": {
@@ -355,6 +361,10 @@
         },
         {
           "command": "geminiCoder.saveContext",
+          "when": "false"
+        },
+        {
+          "command": "geminiCoder.generateCommitMessage",
           "when": "false"
         }
       ],
@@ -445,6 +455,13 @@
           "command": "geminiCoder.delete",
           "when": "view == geminiCoderViewWorkspace",
           "group": "1_modification@2"
+        }
+      ],
+      "scm/title": [
+        {
+          "command": "geminiCoder.generateCommitMessage",
+          "group": "navigation",
+          "when": "scmProvider == git"
         }
       ]
     },

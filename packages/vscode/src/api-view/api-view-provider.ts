@@ -40,6 +40,8 @@ export class ApiViewProvider implements vscode.WebviewViewProvider {
       this._model_manager.get_default_refactoring_model()
     const default_apply_changes_model =
       this._model_manager.get_default_apply_changes_model()
+    const default_commit_message_model =
+      this._model_manager.get_default_commit_message_model()
 
     this._webview_view.webview.postMessage({
       command: 'configuration',
@@ -47,7 +49,8 @@ export class ApiViewProvider implements vscode.WebviewViewProvider {
       api_key,
       default_fim_model,
       default_refactoring_model,
-      default_apply_changes_model
+      default_apply_changes_model,
+      default_commit_message_model
     })
   }
 
@@ -76,6 +79,8 @@ export class ApiViewProvider implements vscode.WebviewViewProvider {
           this._model_manager.get_default_refactoring_model()
         const default_apply_changes_model =
           this._model_manager.get_default_apply_changes_model()
+        const default_commit_message_model =
+          this._model_manager.get_default_commit_message_model()
 
         webview_view.webview.postMessage({
           command: 'configuration',
@@ -83,7 +88,8 @@ export class ApiViewProvider implements vscode.WebviewViewProvider {
           api_key,
           default_fim_model,
           default_refactoring_model,
-          default_apply_changes_model
+          default_apply_changes_model,
+          default_commit_message_model
         })
       } else if (message.command == 'update_api_key') {
         await vscode.workspace
@@ -95,6 +101,10 @@ export class ApiViewProvider implements vscode.WebviewViewProvider {
         await this._model_manager.set_default_refactoring_model(message.model)
       } else if (message.command == 'update_apply_changes_model') {
         await this._model_manager.set_default_apply_changes_model(message.model)
+      } else if (message.command == 'update_commit_message_model') {
+        await this._model_manager.set_default_commit_message_model(
+          message.model
+        )
       } else if (message.command == 'open_providers_settings') {
         vscode.commands.executeCommand(
           'workbench.action.openSettings',

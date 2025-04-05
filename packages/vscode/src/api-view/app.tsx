@@ -14,6 +14,8 @@ function App() {
     useState<string>('')
   const [default_apply_changes_model, set_default_apply_changes_model] =
     useState<string>('')
+  const [default_commit_message_model, set_default_commit_message_model] =
+    useState<string>('')
 
   useEffect(() => {
     vscode.postMessage({ command: 'get_configuration' })
@@ -26,6 +28,7 @@ function App() {
         set_default_fim_model(message.default_fim_model)
         set_default_refactoring_model(message.default_refactoring_model)
         set_default_apply_changes_model(message.default_apply_changes_model)
+        set_default_commit_message_model(message.default_commit_message_model)
       }
     }
 
@@ -65,6 +68,14 @@ function App() {
     set_default_apply_changes_model(model)
   }
 
+  const handle_commit_message_model_change = (model: string) => {
+    vscode.postMessage({
+      command: 'update_commit_message_model',
+      model
+    })
+    set_default_commit_message_model(model)
+  }
+
   const handle_open_providers_settings = () => {
     vscode.postMessage({
       command: 'open_providers_settings'
@@ -78,10 +89,12 @@ function App() {
       default_fim_model={default_fim_model}
       default_refactoring_model={default_refactoring_model}
       default_apply_changes_model={default_apply_changes_model}
+      default_commit_message_model={default_commit_message_model}
       on_api_key_change={handle_api_key_change}
       on_fim_model_change={handle_fim_model_change}
       on_refactoring_model_change={handle_refactoring_model_change}
       on_apply_changes_model_change={handle_apply_changes_model_change}
+      on_commit_message_model_change={handle_commit_message_model_change}
       open_providers_settings={handle_open_providers_settings}
     />
   )

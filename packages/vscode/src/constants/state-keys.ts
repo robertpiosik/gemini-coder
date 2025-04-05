@@ -1,5 +1,6 @@
 export const DEFAULT_FIM_MODEL_KEY = 'defaultFimModel'
 export const DEFAULT_REFACTORING_MODEL_KEY = 'defaultRefactoringModel'
 export const DEFAULT_APPLY_CHANGES_MODEL_KEY = 'defaultApplyChangesModel'
+export const DEFAULT_COMMIT_MESSAGE_MODEL_KEY = 'defaultCommitMessageModel'
 export const LAST_APPLIED_CHANGES_STATE_KEY = 'lastAppliedChangesState'
 export const SAVED_CONTEXTS_STATE_KEY = 'savedContexts'

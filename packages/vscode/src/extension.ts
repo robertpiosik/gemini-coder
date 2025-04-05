@@ -40,6 +40,7 @@ import {
 import { save_context_command } from './commands/save-context-command'
 import { revert_command } from './commands/revert-command'
 import { migrate_saved_contexts } from './utils/migrate-saved-contexts'
+import { generate_commit_message_command } from './commands/generate-commit-message-command'
 
 // Store WebSocketServer instance at module level
 let websocket_server_instance: WebSocketManager | null = null
@@ -219,6 +220,7 @@ export async function activate(context: vscode.ExtensionContext) {
     delete_command(),
     save_context_command(workspace_provider, context),
     revert_command(context),
+    generate_commit_message_command(context),
     {
       dispose: () => {
         if (websocket_server_instance) {
