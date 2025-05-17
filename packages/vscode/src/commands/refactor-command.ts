@@ -8,8 +8,9 @@ import {
   TEMP_REFACTORING_INSTRUCTION_STATE_KEY
 } from '../constants/state-keys'
 import { Logger } from '../helpers/logger'
-import { ApiToolsSettingsManager } from '../services/api-tools-settings-manager'
+import { ApiProvidersManager } from '../services/api-providers-manager'
 import { get_refactoring_instruction } from '@/constants/instructions'
+import { PROVIDERS } from '@shared/constants/providers'
 
 export function refactor_command(params: {
   context: vscode.ExtensionContext
@@ -17,7 +18,7 @@ export function refactor_command(params: {
   open_editors_provider?: any
   use_default_model?: boolean
 }) {
-  const api_tool_settings_manager = new ApiToolsSettingsManager(params.context)
+  const api_providers_manager = new ApiProvidersManager(params.context)
 
   return vscode.commands.registerCommand('codeWebChat.refactor', async () => {
     const editor = vscode.window.activeTextEditor
@@ -83,34 +84,35 @@ export function refactor_command(params: {
     }
 
     const refactoring_settings =
-      api_tool_settings_manager.get_api_tool_file_refactoring_settings()
+      api_providers_manager.get_file_refactoring_tool_config()
 
-    if (!refactoring_settings.provider) {
+    if (!refactoring_settings) {
       vscode.window.showErrorMessage(
-        'API provider is not specified for File Refactoring tool. Go to Code Web Chat panel -> API Tools tab -> Configure Tools.'
+        'File Refactoring tool is not configured. Go to Code Web Chat panel -> Settings tab.'
       )
       Logger.warn({
         function_name: 'refactor_command',
-        message: 'API provider is not specified for File Refactoring tool.'
-      })
-      return
-    } else if (!refactoring_settings.model) {
-      vscode.window.showErrorMessage(
-        'Model is not specified for File Refactoring tool. Go to Code Web Chat panel -> API Tools tab -> Configure Tools.'
-      )
-      Logger.warn({
-        function_name: 'refactor_command',
-        message: 'Model is not specified for File Refactoring tool.'
+        message: 'File Refactoring tool is not configured.'
       })
       return
     }
 
-    const connection_details =
-      api_tool_settings_manager.provider_to_connection_details(
-        refactoring_settings.provider
-      )
+    const provider = api_providers_manager.get_provider(
+      refactoring_settings.provider_name
+    )
 
-    if (!connection_details.api_key) {
+    if (!provider) {
+      vscode.window.showErrorMessage(
+        'API provider not found for File Refactoring tool. Go to Code Web Chat panel -> Settings tab.'
+      )
+      Logger.warn({
+        function_name: 'refactor_command',
+        message: 'API provider not found for File Refactoring tool.'
+      })
+      return
+    }
+
+    if (!provider.api_key) {
       vscode.window.showErrorMessage(
         'API key is missing. Please add it in the settings.'
       )
@@ -128,7 +130,6 @@ export function refactor_command(params: {
     })
 
     const current_file_path = vscode.workspace.asRelativePath(document.uri)
-
     const selection = editor.selection
     const selected_text = editor.document.getText(selection)
     let refactoring_instruction = get_refactoring_instruction(file_path)
@@ -151,7 +152,7 @@ export function refactor_command(params: {
     const body = {
       messages,
       model: refactoring_settings.model,
-      temperature: refactoring_settings.temperature || 0
+      temperature: refactoring_settings.temperature
     }
 
     Logger.log({
@@ -169,6 +170,14 @@ export function refactor_command(params: {
     let result_content = ''
     let success = false
 
+    let endpoint_url = ''
+    if (provider.type == 'built-in') {
+      const provider_info = PROVIDERS[provider.name]
+      endpoint_url = provider_info.base_url
+    } else {
+      endpoint_url = provider.base_url
+    }
+
     await vscode.window
       .withProgress(
         {
@@ -183,8 +192,8 @@ export function refactor_command(params: {
 
           try {
             const refactored_content = await make_api_request(
-              connection_details.endpoint_url,
-              connection_details.api_key,
+              endpoint_url,
+              provider.api_key,
               body,
               cancel_token_source.token,
               (chunk: string) => {

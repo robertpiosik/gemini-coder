@@ -12,7 +12,6 @@ import {
   SaveCodeCompletionSuggestionsMessage,
   WebviewMessage
 } from '../types/messages'
-import { use_open_router_models } from './hooks/use-open-router-models'
 import { TextButton as UiTextButton } from '@ui/components/editor/TextButton'
 import { SettingsTab } from './tabs/settings/SettingsTab'
 
@@ -31,8 +30,6 @@ export const View = () => {
   )
   const [code_completion_suggestions, set_code_completion_suggestions] =
     useState<string | undefined>(undefined)
-
-  const open_router_models_hook = use_open_router_models(vscode)
 
   const handle_instructions_change = (value: string) => {
     set_instructions(value)
@@ -158,13 +155,11 @@ export const View = () => {
         <UiEditPresetForm
           preset={updating_preset}
           on_update={set_updated_preset}
-          request_open_router_models={
-            open_router_models_hook.request_open_router_models
-          }
-          open_router_models={open_router_models_hook.open_router_models}
-          get_newly_picked_open_router_model={
-            open_router_models_hook.get_newly_picked_open_router_model
-          }
+          request_open_router_models={() => {}}
+          open_router_models={{}}
+          get_newly_picked_open_router_model={async () => {
+            return ''
+          }}
         />
       </UiEditView>
     )

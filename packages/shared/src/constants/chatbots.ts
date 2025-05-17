@@ -1,5 +1,5 @@
-type Chatbot = {
-  [key: string]: {
+type Chatbots = {
+  [name: string]: {
     url: string
     supports_custom_temperature: boolean
     supports_custom_top_p: boolean
@@ -190,4 +190,4 @@ export const CHATBOTS = {
       hunyuan: 'Hunyuan'
     }
   }
-} satisfies Chatbot
+} satisfies Chatbots

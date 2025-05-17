@@ -7,8 +7,9 @@ import { execSync } from 'child_process'
 import { Logger } from '@/helpers/logger'
 import { should_ignore_file } from '../context/utils/extension-utils'
 import { process_single_trailing_dot } from '@/utils/process-single-trailing-dot/process-single-trailing-dot'
-import { ApiToolsSettingsManager } from '../services/api-tools-settings-manager'
+import { ApiProvidersManager } from '../services/api-providers-manager'
 import { ignored_extensions } from '@/context/constants/ignored-extensions'
+import { PROVIDERS } from '@shared/constants/providers'
 
 export function generate_commit_message_command(
   context: vscode.ExtensionContext
@@ -72,40 +73,49 @@ export function generate_commit_message_command(
           ...config_ignored_extensions
         ])
 
-        const api_tool_settings_manager = new ApiToolsSettingsManager(context)
-        const commit_message_settings =
-          api_tool_settings_manager.get_api_tool_commit_messages_settings()
+        const api_providers_manager = new ApiProvidersManager(context)
+        const commit_message_config =
+          api_providers_manager.get_commit_messages_tool_config()
 
-        if (!commit_message_settings.provider) {
+        if (!commit_message_config) {
           vscode.window.showErrorMessage(
-            'API provider is not specified for Commit Messages tool. Go to Code Web Chat panel -> API Tools tab -> Configure Tools.'
+            'Commit Messages tool is not configured. Go to Code Web Chat panel -> Settings tab.'
           )
           Logger.warn({
             function_name: 'generate_commit_message_command',
-            message: 'API provider is not specified for Commit Messages tool.'
-          })
-          return
-        } else if (!commit_message_settings.model) {
-          vscode.window.showErrorMessage(
-            'Model is not specified for Commit Messages tool. Go to Code Web Chat panel -> API Tools tab -> Configure Tools.'
-          )
-          Logger.warn({
-            function_name: 'generate_commit_message_command',
-            message: 'Model is not specified for Commit Messages tool.'
+            message: 'Commit Messages tool is not configured.'
           })
           return
         }
 
-        const connection_details =
-          api_tool_settings_manager.provider_to_connection_details(
-            commit_message_settings.provider
-          )
+        const provider = api_providers_manager.get_provider(
+          commit_message_config.provider_name
+        )
 
-        if (!connection_details.api_key) {
+        if (!provider) {
           vscode.window.showErrorMessage(
-            'API key is missing. Please add it in the settings.'
+            'API provider not found for Commit Messages tool. Go to Code Web Chat panel -> Settings tab.'
+          )
+          Logger.warn({
+            function_name: 'generate_commit_message_command',
+            message: 'API provider not found for Commit Messages tool.'
+          })
+          return
+        }
+
+        if (!provider.api_key) {
+          vscode.window.showErrorMessage(
+            'API key is missing for the selected provider. Please add it in the settings.'
           )
           return
+        }
+
+        let endpoint_url = ''
+        if (provider.type == 'built-in') {
+          const provider_info = PROVIDERS[provider.name]
+          endpoint_url = provider_info.base_url
+        } else {
+          endpoint_url = provider.base_url
         }
 
         // Collect the changed files with their original, unmodified content
@@ -143,8 +153,8 @@ export function generate_commit_message_command(
 
             const body = {
               messages,
-              model: commit_message_settings.model,
-              temperature: commit_message_settings.temperature || 0
+              model: commit_message_config.model,
+              temperature: commit_message_config.temperature
             }
 
             // Make API request
@@ -156,8 +166,8 @@ export function generate_commit_message_command(
 
             try {
               const response = await make_api_request(
-                connection_details.endpoint_url,
-                connection_details.api_key,
+                endpoint_url,
+                provider.api_key,
                 body,
                 cancel_token_source.token
               )

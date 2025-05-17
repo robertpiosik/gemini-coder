@@ -1,7 +1,7 @@
 {
   "name": "gemini-coder",
   "displayName": "Code Web Chat (CWC, prev. Gemini Coder)",
-  "description": "Initialize any web chat with your code.",
+  "description": "Initialize any web chat with your code. Add websites to context.",
   "version": "1.0.480",
   "scripts": {
     "build": "npx vsce package --no-dependencies",
@@ -829,75 +829,6 @@
               "name",
               "chatbot"
             ]
-          }
-        },
-        "codeWebChat.apiToolCodeCompletionsSettings": {
-          "type": "object",
-          "scope": "resource",
-          "description": "Settings for code completions API tool.",
-          "properties": {
-            "provider": {
-              "type": "string",
-              "enum": [
-                "Gemini API",
-                "OpenRouter"
-              ],
-              "description": "Provider to use for code completions."
-            },
-            "model": {
-              "type": "string",
-              "description": "Model to use for code completions."
-            },
-            "temperature": {
-              "type": "number",
-              "description": "Temperature setting for code completions."
-            }
-          }
-        },
-        "codeWebChat.apiToolFileRefactoringSettings": {
-          "type": "object",
-          "scope": "resource",
-          "description": "Settings for file refactoring API tool.",
-          "properties": {
-            "provider": {
-              "type": "string",
-              "enum": [
-                "Gemini API",
-                "OpenRouter"
-              ],
-              "description": "Provider to use for file refactoring."
-            },
-            "model": {
-              "type": "string",
-              "description": "Model to use for file refactoring."
-            },
-            "temperature": {
-              "type": "number",
-              "description": "Temperature setting for file refactoring."
-            }
-          }
-        },
-        "codeWebChat.apiToolCommitMessageSettings": {
-          "type": "object",
-          "scope": "resource",
-          "description": "Settings for commit messages API tool.",
-          "properties": {
-            "provider": {
-              "type": "string",
-              "enum": [
-                "Gemini API",
-                "OpenRouter"
-              ],
-              "description": "Provider to use for commit messages."
-            },
-            "model": {
-              "type": "string",
-              "description": "Model to use for commit messages."
-            },
-            "temperature": {
-              "type": "number",
-              "description": "Temperature setting for commit messages."
-            }
           }
         }
       }

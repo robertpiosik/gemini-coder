@@ -1,32 +1,14 @@
 import { CHATBOTS } from '@shared/constants/chatbots'
-import { ToolSettings } from '@shared/types/tool-settings'
 import { EditFormat } from '@shared/types/edit-format'
 import { Preset } from '@shared/types/preset'
 import { EditFormatSelectorVisibility } from './edit-format-selector-visibility'
+import { PROVIDERS } from '@shared/constants/providers'
 
 export interface BaseMessage {
   command: string
 }
 
 // Messages from webview to extension
-export interface GetGeminiApiKeyMessage extends BaseMessage {
-  command: 'GET_GEMINI_API_KEY'
-}
-
-export interface UpdateGeminiApiKeyMessage extends BaseMessage {
-  command: 'UPDATE_GEMINI_API_KEY'
-  api_key: string
-}
-
-export interface GetOpenRouterApiKeyMessage extends BaseMessage {
-  command: 'GET_OPEN_ROUTER_API_KEY'
-}
-
-export interface UpdateOpenRouterApiKeyMessage extends BaseMessage {
-  command: 'UPDATE_OPEN_ROUTER_API_KEY'
-  api_key: string
-}
-
 export interface GetInstructionsMessage extends BaseMessage {
   command: 'GET_INSTRUCTIONS'
 }
@@ -153,47 +135,6 @@ export interface CreatePresetMessage extends BaseMessage {
   command: 'CREATE_PRESET'
 }
 
-export interface GetOpenRouterModelsMessage extends BaseMessage {
-  command: 'GET_OPEN_ROUTER_MODELS'
-}
-
-export interface ShowOpenRouterModelPickerMessage extends BaseMessage {
-  command: 'SHOW_OPEN_ROUTER_MODEL_PICKER'
-  models: {
-    id: string
-    name: string
-    description: string
-  }[]
-}
-
-export interface GetApiToolCodeCompletionsSettingsMessage extends BaseMessage {
-  command: 'GET_API_TOOL_CODE_COMPLETIONS_SETTINGS'
-}
-
-export interface UpdateApiToolCodeCompletionsSettingsMessage
-  extends BaseMessage {
-  command: 'UPDATE_TOOL_CODE_COMPLETIONS_SETTINGS'
-  settings: ToolSettings
-}
-
-export interface GetToolFileRefactoringSettingsMessage extends BaseMessage {
-  command: 'GET_API_TOOL_FILE_REFACTORING_SETTINGS'
-}
-
-export interface UpdateToolFileRefactoringSettingsMessage extends BaseMessage {
-  command: 'UPDATE_TOOL_FILE_REFACTORING_SETTINGS'
-  settings: ToolSettings
-}
-
-export interface GetApiToolCommitMessageSettingsMessage extends BaseMessage {
-  command: 'GET_API_TOOL_COMMIT_MESSAGES_SETTINGS'
-}
-
-export interface UpdateApiToolCommitMessageSettingsMessage extends BaseMessage {
-  command: 'UPDATE_TOOL_COMMIT_MESSAGES_SETTINGS'
-  settings: ToolSettings
-}
-
 export interface ExecuteCommandMessage extends BaseMessage {
   command: 'EXECUTE_COMMAND'
   command_id: string
@@ -228,17 +169,23 @@ export interface CaretPositionChangedWebviewMessage extends BaseMessage {
   caret_position: number
 }
 
+export interface ConfigureApiProvidersMessage extends BaseMessage {
+  command: 'CONFIGURE_API_PROVIDERS'
+}
+
+export interface SetupApiToolCodeCompletionsMessage extends BaseMessage {
+  command: 'SETUP_API_TOOL_CODE_COMPLETIONS'
+}
+
+export interface SetupApiToolFileRefactoringMessage extends BaseMessage {
+  command: 'SETUP_API_TOOL_FILE_REFACTORING'
+}
+
+export interface SetupApiToolCommitMessagesMessage extends BaseMessage {
+  command: 'SETUP_API_TOOL_COMMIT_MESSAGES'
+}
+
 // Messages from extension to webview:
-export interface GeminiApiKeyMessage extends BaseMessage {
-  command: 'GEMINI_API_KEY'
-  api_key: string
-}
-
-export interface OpenRouterApiKeyMessage extends BaseMessage {
-  command: 'OPEN_ROUTER_API_KEY'
-  api_key: string
-}
-
 export interface InstructionsMessage extends BaseMessage {
   command: 'INSTRUCTIONS'
   value: string
@@ -346,19 +293,6 @@ export interface PresetUpdatedMessage extends BaseMessage {
   command: 'PRESET_UPDATED'
 }
 
-export interface CustomProvidersUpdatedMessage extends BaseMessage {
-  command: 'CUSTOM_PROVIDERS_UPDATED'
-  custom_providers: Array<{
-    name: string
-    endpointUrl: string
-    apiKey: string
-    model: string
-    temperature?: number
-    top_p?: number
-    systemInstructions?: string
-  }>
-}
-
 export interface OpenRouterModelsMessage extends BaseMessage {
   command: 'OPEN_ROUTER_MODELS'
   models: {
@@ -374,32 +308,30 @@ export interface OpenRouterModelSelectedMessage extends BaseMessage {
   model_id: string | undefined
 }
 
-export interface ApiToolCodeCompletionsSettingsMessage extends BaseMessage {
-  command: 'API_TOOL_CODE_COMPLETIONS_SETTINGS'
-  settings: ToolSettings
-}
-
-export interface ApiToolFileRefactoringSettingsMessage extends BaseMessage {
-  command: 'API_TOOL_FILE_REFACTORING_SETTINGS'
-  settings: ToolSettings
-}
-
-export interface ApiToolCommitMessageSettingsMessage extends BaseMessage {
-  command: 'API_TOOL_COMMIT_MESSAGES_SETTINGS'
-  settings: ToolSettings
-}
-
 export interface SelectedCodeCompletionPresetsMessage extends BaseMessage {
   command: 'SELECTED_CODE_COMPLETION_PRESETS'
   names: string[]
 }
 
+export interface ApiProvidersMessage extends BaseMessage {
+  command: 'PROVIDERS'
+  providers: Array<
+    | {
+        type: 'built-in'
+        id: keyof typeof PROVIDERS
+        api_key: string
+      }
+    | {
+        type: 'custom'
+        name: string
+        base_url: string
+        api_key: string
+      }
+  >
+}
+
 // Union type of all possible incoming messages from webview
 export type WebviewMessage =
-  | GetGeminiApiKeyMessage
-  | UpdateGeminiApiKeyMessage
-  | GetOpenRouterApiKeyMessage
-  | UpdateOpenRouterApiKeyMessage
   | GetInstructionsMessage
   | GetCodeCompletionSuggestionsMessage
   | SaveInstructionsMessage
@@ -428,24 +360,18 @@ export type WebviewMessage =
   | DeletePresetMessage
   | DuplicatePresetMessage
   | CreatePresetMessage
-  | GetOpenRouterModelsMessage
-  | ShowOpenRouterModelPickerMessage
-  | GetApiToolCodeCompletionsSettingsMessage
-  | UpdateApiToolCodeCompletionsSettingsMessage
-  | GetToolFileRefactoringSettingsMessage
-  | UpdateToolFileRefactoringSettingsMessage
-  | GetApiToolCommitMessageSettingsMessage
-  | UpdateApiToolCommitMessageSettingsMessage
   | ExecuteCommandMessage
   | ShowQuickPickMessage
   | PreviewPresetMessage
   | GetSelectedCodeCompletionPresetsMessage
   | SaveSelectedCodeCompletionPresetsMessage
   | CaretPositionChangedWebviewMessage
+  | ConfigureApiProvidersMessage
+  | SetupApiToolCodeCompletionsMessage
+  | SetupApiToolFileRefactoringMessage
+  | SetupApiToolCommitMessagesMessage
 
 export type ExtensionMessage =
-  | GeminiApiKeyMessage
-  | OpenRouterApiKeyMessage
   | InstructionsMessage
   | CodeCompletionSuggestionsMessage
   | ConnectionStatusMessage
@@ -467,8 +393,6 @@ export type ExtensionMessage =
   | PresetUpdatedMessage
   | OpenRouterModelsMessage
   | OpenRouterModelSelectedMessage
-  | ApiToolCodeCompletionsSettingsMessage
-  | ApiToolFileRefactoringSettingsMessage
-  | ApiToolCommitMessageSettingsMessage
   | SelectedCodeCompletionPresetsMessage
   | ExecuteCommandMessage
+  | ApiProvidersMessage

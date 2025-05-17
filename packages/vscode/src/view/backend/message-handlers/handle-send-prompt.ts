@@ -128,7 +128,7 @@ export const handle_send_prompt = async (
   } else if (!provider.is_code_completions_mode) {
     if (!provider.instructions) {
       vscode.window.showInformationMessage(
-        'Please enter instructions to use the preset.'
+        'Please enter instructions.'
       )
       return
     }

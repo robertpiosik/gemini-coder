@@ -8,7 +8,6 @@ import {
   TokenCountMessage,
   SelectionTextMessage,
   ActiveFileInfoMessage,
-  ApiToolCommitMessageSettingsMessage,
   InstructionsMessage,
   CodeCompletionSuggestionsMessage,
   EditFormatSelectorVisibilityMessage
@@ -18,16 +17,9 @@ import { OpenEditorsProvider } from '@/context/providers/open-editors-provider'
 import { WorkspaceProvider } from '@/context/providers/workspace-provider'
 import { token_count_emitter } from '@/context/context-initialization'
 import { Preset } from '@shared/types/preset'
-import { ApiToolsSettingsManager } from '@/services/api-tools-settings-manager'
-import { ToolSettings } from '@shared/types/tool-settings'
 import { EditFormat } from '@shared/types/edit-format'
 import { EditFormatSelectorVisibility } from '../types/edit-format-selector-visibility'
 import {
-  handle_get_api_tool_code_completions_settings,
-  handle_get_api_tool_file_refactoring_settings,
-  handle_get_api_tool_commit_messages_settings,
-  handle_get_open_router_models,
-  handle_show_open_router_model_picker,
   handle_show_preset_picker,
   handle_copy_prompt,
   handle_send_prompt,
@@ -55,7 +47,9 @@ import {
   handle_save_code_completions_mode,
   handle_request_editor_state,
   handle_request_editor_selection_state,
-  handle_get_open_router_api_key
+  handle_configure_api_providers,
+  handle_setup_api_tool_code_completions,
+  handle_setup_api_tool
 } from './message-handlers'
 import {
   config_preset_to_ui_format,
@@ -68,7 +62,6 @@ export class ViewProvider implements vscode.WebviewViewProvider {
   public has_active_editor: boolean = false
   public has_active_selection: boolean = false
   public is_code_completions_mode: boolean = false
-  public api_tools_settings_manager: ApiToolsSettingsManager
   public caret_position: number = 0
   public instructions: string = ''
   public code_completion_suggestions: string = ''
@@ -104,30 +97,6 @@ export class ViewProvider implements vscode.WebviewViewProvider {
         if (event.affectsConfiguration('codeWebChat.presets')) {
           this.send_presets_to_webview(this._webview_view.webview)
         } else if (
-          event.affectsConfiguration(
-            'codeWebChat.apiToolCodeCompletionsSettings'
-          )
-        ) {
-          handle_get_api_tool_code_completions_settings(this)
-        } else if (
-          event.affectsConfiguration(
-            'codeWebChat.apiToolFileRefactoringSettings'
-          )
-        ) {
-          handle_get_api_tool_file_refactoring_settings(this)
-        } else if (
-          event.affectsConfiguration('codeWebChat.apiToolCommitMessageSettings')
-        ) {
-          const config = vscode.workspace.getConfiguration('codeWebChat')
-          const settings = config.get<ToolSettings>(
-            'apiToolCommitMessageSettings',
-            {}
-          )
-          this.send_message<ApiToolCommitMessageSettingsMessage>({
-            command: 'API_TOOL_COMMIT_MESSAGES_SETTINGS',
-            settings
-          })
-        } else if (
           event.affectsConfiguration('codeWebChat.editFormatSelectorVisibility')
         ) {
           const config = vscode.workspace.getConfiguration('codeWebChat')
@@ -149,7 +118,6 @@ export class ViewProvider implements vscode.WebviewViewProvider {
     })
 
     this.context.subscriptions.push(this._config_listener)
-    this.api_tools_settings_manager = new ApiToolsSettingsManager(this.context)
 
     this.instructions = this.context.workspaceState.get<string>(
       'instructions',
@@ -390,56 +358,6 @@ export class ViewProvider implements vscode.WebviewViewProvider {
             await handle_duplicate_preset(this, message, webview_view)
           } else if (message.command == 'CREATE_PRESET') {
             await handle_create_preset(this)
-          } else if (message.command == 'GET_GEMINI_API_KEY') {
-            const api_key = this.api_tools_settings_manager.get_gemini_api_key()
-            this.send_message<ExtensionMessage>({
-              command: 'GEMINI_API_KEY',
-              api_key
-            })
-          } else if (message.command == 'GET_OPEN_ROUTER_API_KEY') {
-            handle_get_open_router_api_key(this)
-          } else if (message.command == 'UPDATE_GEMINI_API_KEY') {
-            await this.api_tools_settings_manager.set_gemini_api_key(
-              message.api_key
-            )
-          } else if (message.command == 'UPDATE_OPEN_ROUTER_API_KEY') {
-            await this.api_tools_settings_manager.set_open_router_api_key(
-              message.api_key
-            )
-          } else if (message.command == 'GET_OPEN_ROUTER_MODELS') {
-            await handle_get_open_router_models(this)
-          } else if (message.command == 'SHOW_OPEN_ROUTER_MODEL_PICKER') {
-            await handle_show_open_router_model_picker(this, message.models)
-          } else if (
-            message.command == 'GET_API_TOOL_CODE_COMPLETIONS_SETTINGS'
-          ) {
-            handle_get_api_tool_code_completions_settings(this)
-          } else if (
-            message.command == 'UPDATE_TOOL_CODE_COMPLETIONS_SETTINGS'
-          ) {
-            this.api_tools_settings_manager.set_code_completions_settings(
-              message.settings
-            )
-          } else if (
-            message.command == 'GET_API_TOOL_FILE_REFACTORING_SETTINGS'
-          ) {
-            handle_get_api_tool_file_refactoring_settings(this)
-          } else if (
-            message.command == 'UPDATE_TOOL_FILE_REFACTORING_SETTINGS'
-          ) {
-            this.api_tools_settings_manager.set_file_refactoring_settings(
-              message.settings
-            )
-          } else if (
-            message.command == 'GET_API_TOOL_COMMIT_MESSAGES_SETTINGS'
-          ) {
-            handle_get_api_tool_commit_messages_settings(this)
-          } else if (
-            message.command == 'UPDATE_TOOL_COMMIT_MESSAGES_SETTINGS'
-          ) {
-            this.api_tools_settings_manager.set_commit_messages_settings(
-              message.settings
-            )
           } else if (message.command == 'EXECUTE_COMMAND') {
             vscode.commands.executeCommand(message.command_id)
           } else if (message.command == 'SHOW_QUICK_PICK') {
@@ -459,6 +377,14 @@ export class ViewProvider implements vscode.WebviewViewProvider {
             await handle_save_edit_format_selector_visibility(this, message)
           } else if (message.command == 'CARET_POSITION_CHANGED') {
             this.caret_position = message.caret_position
+          } else if (message.command == 'CONFIGURE_API_PROVIDERS') {
+            handle_configure_api_providers(this)
+          } else if (message.command == 'SETUP_API_TOOL_CODE_COMPLETIONS') {
+            await handle_setup_api_tool_code_completions(this)
+          } else if (message.command == 'SETUP_API_TOOL_FILE_REFACTORING') {
+            await handle_setup_api_tool(this, 'file-refactoring')
+          } else if (message.command == 'SETUP_API_TOOL_COMMIT_MESSAGES') {
+            await handle_setup_api_tool(this, 'commit-messages')
           }
         } catch (error: any) {
           console.error('Error handling message:', message, error)

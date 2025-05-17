@@ -90,6 +90,10 @@ The Connector extension is available in [Chrome Web Store](https://chromewebstor
 
 > <small>**Legal Disclaimer:** After chat initialization, the extension does not read the incoming message. The injected _Apply response_ button is not a means of automatic output extraction, it's an alias for the original _copy to clipboard_ button.</small>
 
+### Practice single-turns
+
+Chat conversations are only a construct of product interfaces, they hurt the quality of responses from the model and once your context is "poisoned" it will not recover. Whenever you're not satisfied with a reponse, **the best practice is to alawys refine your initial instructions and re-initialize**.
+
 ## 🧰 Tools
 
 Support your day-to-day work with all must-have AI features.
@@ -191,4 +195,5 @@ Participate in [discussions](https://github.com/robertpiosik/CodeWebChat/discuss
 
 Copyright © 2025-present [Robert Piosik](https://x.com/robertpiosik)
 </br>📨 `robertpiosik@gmail.com`
+</br>Telegram: `@robertpiosik`
 </br>📃 [GPL-3.0 license](https://github.com/robertpiosik/CodeWebChat/blob/master/LICENSE)

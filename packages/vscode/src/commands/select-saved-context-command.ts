@@ -69,19 +69,21 @@ async function resolve_glob_patterns(
         glob_matches.forEach((match) => {
           // Check if the glob match is a file directly present in the cache
           if (all_files_in_cache.has(match)) {
-            files_this_rule_applies_to.add(match);
+            files_this_rule_applies_to.add(match)
           } else {
             // If not a direct file match, 'match' might be a directory returned by glob.sync.
             // We find all files in our cache that are within this directory.
             // Ensure 'match' ends with a path separator for correct startsWith comparison.
-            const directory_path_prefix = match.endsWith(path.sep) ? match : match + path.sep;
+            const directory_path_prefix = match.endsWith(path.sep)
+              ? match
+              : match + path.sep
             for (const cached_file of all_files_in_cache) {
               if (cached_file.startsWith(directory_path_prefix)) {
-                files_this_rule_applies_to.add(cached_file);
+                files_this_rule_applies_to.add(cached_file)
               }
             }
           }
-        });
+        })
       } catch (error) {
         console.warn(
           `Failed to resolve glob pattern "${current_actual_pattern}" (during sequential processing):`,
@@ -115,7 +117,7 @@ async function resolve_glob_patterns(
   }
 
   Logger.log({
-    message: `Resolved final paths: ${resolved_final_paths.size}`,
+    message: `Resolved final paths: ${resolved_final_paths.size}`
   })
 
   // Return the final list of included paths
@@ -284,14 +286,16 @@ export function select_saved_context_command(
         const quick_pick_storage_options = [
           {
             label: 'Workspace State',
-            description: `${internal_contexts.length} ${internal_contexts.length == 1 ? 'context' : 'contexts'
-              }`,
+            description: `${internal_contexts.length} ${
+              internal_contexts.length == 1 ? 'context' : 'contexts'
+            }`,
             value: 'internal'
           },
           {
             label: 'JSON File (.vscode/contexts.json)',
-            description: `${file_contexts.length} ${file_contexts.length == 1 ? 'context' : 'contexts'
-              }`,
+            description: `${file_contexts.length} ${
+              file_contexts.length == 1 ? 'context' : 'contexts'
+            }`,
             value: 'file'
           }
         ]
@@ -369,19 +373,20 @@ export function select_saved_context_command(
       try {
         const edit_button = {
           iconPath: new vscode.ThemeIcon('edit'),
-          tooltip: 'Edit context name'
+          tooltip: 'Rename'
         }
         const delete_button = {
           iconPath: new vscode.ThemeIcon('trash'),
-          tooltip: 'Delete this saved context'
+          tooltip: 'Delete'
         }
 
         // Function to create quickpick items from contexts
         const create_quick_pick_items = (contexts: SavedContext[]) => {
           return contexts.map((context) => ({
             label: context.name,
-            description: `${context.paths.length} ${context.paths.length == 1 ? 'path' : 'paths'
-              }`,
+            description: `${context.paths.length} ${
+              context.paths.length == 1 ? 'path' : 'paths'
+            }`,
             context,
             buttons: [edit_button, delete_button]
           }))
@@ -390,10 +395,11 @@ export function select_saved_context_command(
         // Create QuickPick with buttons
         const quick_pick = vscode.window.createQuickPick()
         quick_pick.items = create_quick_pick_items(contexts_to_use)
-        quick_pick.placeholder = `Select saved context (from ${context_source == 'internal'
+        quick_pick.placeholder = `Select saved context (from ${
+          context_source == 'internal'
             ? 'Workspace State'
             : '.vscode/contexts.json'
-          })`
+        })`
 
         // Create a promise to be resolved when an item is picked or the quick pick is hidden
         const quick_pick_promise = new Promise<
@@ -402,8 +408,8 @@ export function select_saved_context_command(
           quick_pick.onDidAccept(() => {
             const selectedItem = quick_pick
               .activeItems[0] as vscode.QuickPickItem & {
-                context: SavedContext
-              }
+              context: SavedContext
+            }
             quick_pick.hide()
             resolve(selectedItem)
           })

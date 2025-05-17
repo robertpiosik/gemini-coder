@@ -3,9 +3,10 @@ import axios from 'axios'
 import { make_api_request } from '../helpers/make-api-request'
 import { code_completion_instruction } from '../constants/instructions'
 import { FilesCollector } from '../helpers/files-collector'
-import { ApiToolsSettingsManager } from '../services/api-tools-settings-manager'
+import { ApiProvidersManager } from '../services/api-providers-manager'
 import { Logger } from '../helpers/logger'
 import he from 'he'
+import { PROVIDERS } from '@shared/constants/providers'
 
 async function build_completion_payload(params: {
   document: vscode.TextDocument
@@ -101,23 +102,37 @@ async function perform_code_completion(params: {
   with_suggestions: boolean
   auto_accept: boolean
 }) {
-  const api_tool_settings_manager = new ApiToolsSettingsManager(params.context)
+  const api_providers_manager = new ApiProvidersManager(params.context)
 
-  const code_completions_settings =
-    api_tool_settings_manager.get_api_tool_code_completions_settings()
+  const code_completions_configs =
+    api_providers_manager.get_code_completions_tool_configs()
 
-  if (!code_completions_settings.provider) {
+  if (code_completions_configs.length == 0) {
     vscode.window.showErrorMessage(
-      'API provider is not specified for Code Completions tool. Go to Code Web Chat panel -> API Tools tab -> Configure Tools.'
+      'Code Completions tool is not configured. Go to Code Web Chat panel -> Settings tab.'
+    )
+    Logger.warn({
+      function_name: 'perform_code_completion',
+      message: 'Code Completions tool is not configured.'
+    })
+    return
+  }
+
+  // Use the first configuration by default
+  const code_completions_config = code_completions_configs[0]
+
+  if (!code_completions_config.provider_name) {
+    vscode.window.showErrorMessage(
+      'API provider is not specified for Code Completions tool. Go to Code Web Chat panel -> Settings tab.'
     )
     Logger.warn({
       function_name: 'perform_code_completion',
       message: 'API provider is not specified for Code Completions tool.'
     })
     return
-  } else if (!code_completions_settings.model) {
+  } else if (!code_completions_config.model) {
     vscode.window.showErrorMessage(
-      'Model is not specified for Code Completions tool. Go to Code Web Chat panel -> API Tools tab -> Configure Tools.'
+      'Model is not specified for Code Completions tool. Go to Code Web Chat panel -> Settings tab.'
     )
     Logger.warn({
       function_name: 'perform_code_completion',
@@ -126,10 +141,38 @@ async function perform_code_completion(params: {
     return
   }
 
-  const connection_details =
-    api_tool_settings_manager.provider_to_connection_details(
-      code_completions_settings.provider
+  const provider = api_providers_manager.get_provider(
+    code_completions_config.provider_name
+  )
+
+  if (!provider) {
+    vscode.window.showErrorMessage(
+      'API provider not found for Code Completions tool. Go to Code Web Chat panel -> Settings tab.'
     )
+    Logger.warn({
+      function_name: 'perform_code_completion',
+      message: 'API provider not found for Code Completions tool.'
+    })
+    return
+  }
+
+  let endpoint_url = ''
+  if (provider.type == 'built-in') {
+    const provider_info = PROVIDERS[provider.name]
+    if (!provider_info) {
+      vscode.window.showErrorMessage(
+        `Built-in provider "${provider.name}" not found. Go to Code Web Chat panel -> Settings tab.`
+      )
+      Logger.warn({
+        function_name: 'perform_code_completion',
+        message: `Built-in provider "${provider.name}" not found.`
+      })
+      return
+    }
+    endpoint_url = provider_info.base_url
+  } else {
+    endpoint_url = provider.base_url
+  }
 
   let suggestions: string | undefined
   if (params.with_suggestions) {
@@ -143,7 +186,7 @@ async function perform_code_completion(params: {
     }
   }
 
-  if (!connection_details.api_key) {
+  if (!provider.api_key) {
     vscode.window.showErrorMessage(
       'API key is missing. Please add it in the settings.'
     )
@@ -173,8 +216,8 @@ async function perform_code_completion(params: {
 
     const body = {
       messages,
-      model: code_completions_settings.model,
-      temperature: code_completions_settings.temperature || 0
+      model: code_completions_config.model,
+      temperature: code_completions_config.temperature
     }
 
     Logger.log({
@@ -200,8 +243,8 @@ async function perform_code_completion(params: {
 
         try {
           const completion = await make_api_request(
-            connection_details.endpoint_url,
-            connection_details.api_key,
+            endpoint_url,
+            provider.api_key,
             body,
             cancel_token_source.token
           )
